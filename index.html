@@ -815,9 +815,26 @@ document.querySelector('a[href="#demoreel"]').addEventListener('click',function(
       info[pid]={text:d.text||'',images:d.images.map(function(im,i){return{id:'st-'+pid+'-'+i,kind:im.kind,asset:null,url:im.src};}),dirty:false};
     });
     infoSync();
+    /* Modelos 3D: la descarga empieza unas diapositivas antes de llegar a la galeria (primero el primero, luego el resto en paralelo);
+       se muestran en orden cuando la galeria esta cerca. */
+    var mdl={};
+    function getModel(i){
+      if(!mdl[i])mdl[i]=fetch(STATIC_MEDIA.models[i].src).then(function(r){if(!r.ok)throw new Error(STATIC_MEDIA.models[i].src);return r.arrayBuffer();});
+      return mdl[i];
+    }
+    var pre=false;
+    function prefetchModels(){
+      if(pre)return;pre=true;
+      var rest=function(){for(var k=1;k<STATIC_MEDIA.models.length;k++)getModel(k).catch(function(){});};
+      getModel(0).then(rest,rest);
+    }
+    if(window.IntersectionObserver){
+      var pio=new IntersectionObserver(function(e){if(e.some(function(x){return x.isIntersecting;})){pio.disconnect();prefetchModels();}},{rootMargin:'300% 0px 300% 0px'});
+      pio.observe(document.getElementById('p12'));
+    }else{prefetchModels();}
     var chain=x3near();
     STATIC_MEDIA.models.forEach(function(o,i){
-      chain=chain.then(function(){return fetch(o.src);}).then(function(r){if(!r.ok)throw new Error(o.src);return r.arrayBuffer();})
+      chain=chain.then(function(){return getModel(i);})
         .then(function(buf){var m={id:'st-model-'+i,slide:'p12',x:0,y:0,w:34,rot:0,z:10,kind:'model',name:o.name,saved:true,dirty:false};render(m,new Blob([buf],{type:'model/gltf-binary'}));})
         .catch(function(){});
     });
