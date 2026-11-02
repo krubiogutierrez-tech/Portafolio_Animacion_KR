@@ -48,6 +48,7 @@ body.editing .mi .ctl{display:block}
 .mi .rot{left:50%;top:-40px;margin-left:-13px;width:26px;height:26px;border-radius:50%;background:#fff;cursor:grab;touch-action:none}
 .dock{position:fixed;left:max(14px,env(safe-area-inset-left,0px));bottom:max(14px,env(safe-area-inset-bottom,0px));z-index:30;display:flex;gap:6px;background:rgba(0,0,0,.72);padding:6px;border-radius:30px;opacity:.5;transition:opacity .2s}
 .dock:hover,.dock:focus-within,body.editing .dock{opacity:1}
+.dock{display:none!important}/* edicion desactivada en la version publica */
 .dock button{font:700 12px "Orbitron","Trebuchet MS",sans-serif;border:0;border-radius:20px;padding:8px 14px;background:#ffe600;color:#000;cursor:pointer;white-space:nowrap}
 .dock button:hover{background:#fff}
 .dock .save.dirty::after{content:"";display:inline-block;width:8px;height:8px;margin-left:8px;border-radius:50%;background:#db2227;border:1px solid #000}
@@ -585,8 +586,9 @@ document.querySelector('a[href="#demoreel"]').addEventListener('click',function(
     var m={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),slide:slideId,x:x,y:y,w:w,rot:0,z:++zTop,kind:isGlb?'model':((/^video\//.test(file.type)||/\.(webm|mp4)$/i.test(file.name))?'video':'image'),name:isGlb?file.name.replace(/\.glb$/i,''):''};
     render(m,file);saveBlob(m,file);markDirty(m);if(!isGlb)setEditing(true);return true;
   }
-  function addFiles(list,slideId,px,py){var arr=Array.prototype.slice.call(list||[]);var ok=0,gl=0;arr.forEach(function(f,i){if(addFile(f,slideId,px==null?null:px+i*30,py==null?null:py+i*30)){ok++;if(/\.glb$/i.test(f.name))gl++;}});if(ok)toast(gl===ok?'Modelo añadido a la selección. Pulsa «Guardar» para conservarlo.':'Arrastra para mover · esquina amarilla: tamaño · círculo blanco: girar');}
-  function setEditing(on){document.body.classList.toggle('editing',on);editBtn.textContent=on?'Listo':'Editar';editBtn.setAttribute('aria-pressed',on?'true':'false');}
+  var EDIT_LOCKED=true;/* version publica: edicion bloqueada. Para reactivarla: false y quitar la regla .dock{display:none!important} */
+  function addFiles(list,slideId,px,py){if(EDIT_LOCKED)return;var arr=Array.prototype.slice.call(list||[]);var ok=0,gl=0;arr.forEach(function(f,i){if(addFile(f,slideId,px==null?null:px+i*30,py==null?null:py+i*30)){ok++;if(/\.glb$/i.test(f.name))gl++;}});if(ok)toast(gl===ok?'Modelo añadido a la selección. Pulsa «Guardar» para conservarlo.':'Arrastra para mover · esquina amarilla: tamaño · círculo blanco: girar');}
+  function setEditing(on){if(EDIT_LOCKED)on=false;document.body.classList.toggle('editing',on);editBtn.textContent=on?'Listo':'Editar';editBtn.setAttribute('aria-pressed',on?'true':'false');}
   document.querySelector('.dock .add').addEventListener('click',function(){pick.click();});
   editBtn.addEventListener('click',function(){setEditing(!document.body.classList.contains('editing'));});
   pick.addEventListener('change',function(){addFiles(pick.files,curSlide());pick.value='';});
